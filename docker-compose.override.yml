@@ -1,0 +1,18 @@
+services:
+  bot:
+    # Development overrides
+    volumes:
+      - ./logs:/app/logs
+      - ./config.yaml:/app/config.yaml:ro
+      - ./src:/app/src  # Mount source code for development
+      - ./bot.py:/app/bot.py:ro  # Mount main bot file
+    environment:
+      - TZ=Europe/Moscow
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    # Use health check script for development
+    healthcheck:
+      test: ["CMD", "python", "health_check.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
