@@ -26,6 +26,14 @@ class MessageEffect(BaseModel):
     poo: str
 
 
+
+class Owner(BaseModel):
+
+    id: PositiveInt
+    name: str
+    link: HttpUrl
+
+
 class Admins(BaseModel):
     ids: list[PositiveInt]
 
@@ -69,6 +77,7 @@ class Config(BaseModel):
     system: System
     bot: Bot
     message_effect: MessageEffect
+    owner: Owner
     admins: Admins
     superadmins: Superadmins
     redis: Redis

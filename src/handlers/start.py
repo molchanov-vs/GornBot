@@ -1,7 +1,7 @@
 import logging
 
 from aiogram import Router, F
-from aiogram.types import Message, ErrorEvent, CallbackQuery
+from aiogram.types import Message, ErrorEvent, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import ExceptionTypeFilter, CommandStart
 from aiogram.fsm.storage.redis import RedisStorage
 
@@ -14,11 +14,14 @@ from ..states import Feedback
 from ..enums import Database, Action
 from ..utils.utils import get_middleware_data
 from ..queries import add_action
+from ..google_queries import get_teachers
 from ..config import Config
 
 from fluentogram import TranslatorHub
 
 router: Router = Router()
+
+MESSAGE_NOT_TEACHER = "Похоже, что вы не являетесь преподавателем. Пожалуйста, обратитесь к администратору."
 
 
 def get_current_state(
@@ -39,13 +42,33 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
 
     _, config, user_data = get_middleware_data(dialog_manager)
 
-    log_message = f"Bot is starting for {user_data.id} ({user_data.full_name})"
-    logging.warning(log_message)
-    await add_action(dialog_manager, Action.START)
+    teachers = await get_teachers(config)
 
-    current_state = get_current_state(dialog_manager, config, user_data.id)
+    teachers_ids = [teacher.id for teacher in teachers]
+
+    if user_data.id not in teachers_ids:
+
+        connect_btn = InlineKeyboardButton(
+                text=f"💬 {config.owner.name}",
+                url=str(config.owner.link)
+            )
+
+        await message.answer(
+            text=MESSAGE_NOT_TEACHER,
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[[connect_btn]])
+        )
+        suffix = "NOT a teacher"
     
-    await start_dialog(dialog_manager, current_state)
+    else:
+        suffix = "a teacher"
+        await add_action(dialog_manager, Action.START)
+
+        current_state = get_current_state(dialog_manager, config, user_data.id)
+        
+        await start_dialog(dialog_manager, current_state)
+
+    log_message = f"Bot is starting for {suffix} {user_data.id} ({user_data.full_name})"
+    logging.warning(log_message)
 
 
 @router.errors(ExceptionTypeFilter(UnknownIntent))
