@@ -31,7 +31,7 @@ class Service:
 
 class Feedback:
     @staticmethod
-    def discipline() -> Literal["""Привет, username.
+    def discipline(*, username: PossibleValue) -> Literal["""Привет, { $username }.
 
 Выбери дисциплину:"""]: ...
     @staticmethod

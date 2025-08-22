@@ -42,6 +42,15 @@ class Redis(BaseModel):
     temp: str
 
 
+class Google(BaseModel):
+
+    feedbacks_and_accesses_id: str
+    accesses_tab: str
+    content_id: str
+    content_tab: str
+    service_account_json: str
+
+
 class OpenAI(BaseModel):
 
     api_key: str
@@ -63,6 +72,7 @@ class Config(BaseModel):
     admins: Admins
     superadmins: Superadmins
     redis: Redis
+    google: Google
     openai: OpenAI
     system_prompt: SystemPrompt
 

@@ -10,7 +10,7 @@ service-support_btn = 👨🏻‍💻 Поддержка
 
 
 # 1_feedback
-feedback-discipline = Привет, username.
+feedback-discipline = Привет, { $username }.
     
     Выбери дисциплину:
 feedback-task = Дисциплина выбрана.

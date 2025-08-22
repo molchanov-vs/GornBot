@@ -5,48 +5,18 @@ from pydantic import PositiveInt, Field
 from my_tools import get_datetime_now, DateTimeKeys
 
 
+class Teacher(BaseModel):
+
+    id: PositiveInt
+    name: str
+    disciplines: list[str]
+
+
 class UserNotify(BaseModel):
 
     id: PositiveInt
     date: str = Field(default_factory=get_datetime_now)
     status: bool
-
-
-class UserOnboarding(BaseModel):
-
-    date: str = Field(default_factory=get_datetime_now, validate_default=True)
-    approve: bool = Field(default=False)
-    name: str | None = Field(default=None)
-    age: str | None = Field(default=None)
-    education: str | None = Field(default=None)
-    current_status: str | None = Field(default=None)
-    university: str | None = Field(default=None)
-    about: str | None = Field(default=None)
-    question_1: str | None = Field(default=None)
-    question_2: str | None = Field(default=None)
-    question_3: str | None = Field(default=None)
-    question_4: str | None = Field(default=None)
-
-    @field_validator("date")
-    @classmethod
-    def set_date(cls, v: datetime):
-        return get_datetime_now(DateTimeKeys.DEFAULT)
-
-
-class UserOffboarding(BaseModel):
-
-    date: str = Field(default_factory=get_datetime_now, validate_default=True)
-    question_1: str | None = Field(default=None)
-    question_2: str | None = Field(default=None)
-    question_3: str | None = Field(default=None)
-    question_4: str | None = Field(default=None)
-    associate: str | None = Field(default=None)
-    feedback: str | None = Field(default=None)
-
-    @field_validator("date")
-    @classmethod
-    def set_date(cls, v: datetime):
-        return get_datetime_now(DateTimeKeys.DEFAULT)
 
 
 class UserAction(BaseModel):
