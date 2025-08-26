@@ -10,11 +10,12 @@ from aiogram_dialog.api.exceptions import UnknownIntent, UnknownState
 
 from my_tools import DialogManagerKeys
 
+from ..custom_types import Teacher
 from ..states import Feedback
 from ..enums import Database, Action
 from ..utils.utils import get_middleware_data
 from ..queries import add_action
-from ..google_queries import get_teachers
+from ..google_queries import get_teachers, get_data_for_dialog
 from ..config import Config
 
 from fluentogram import TranslatorHub
@@ -29,10 +30,7 @@ def get_current_state(
         config: Config, 
         user_id: int) -> Feedback:
 
-    try:
-        current_state = dialog_manager.current_context().state
-    except:
-        current_state = Feedback.DISCIPLINE
+    current_state = Feedback.DISCIPLINE
 
     return current_state
 
@@ -42,9 +40,9 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
 
     _, config, user_data = get_middleware_data(dialog_manager)
 
-    teachers = await get_teachers(config)
+    teachers: list[Teacher] = await get_teachers(config)
 
-    teachers_ids = [teacher.id for teacher in teachers]
+    teachers_ids: set[int] = set([teacher.id for teacher in teachers])
 
     if user_data.id not in teachers_ids:
 
@@ -64,8 +62,13 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
         await add_action(dialog_manager, Action.START)
 
         current_state = get_current_state(dialog_manager, config, user_data.id)
+
+        start_data: dict = await get_data_for_dialog(config, teachers, user_data.id)
+
+        print("START:\n", start_data)
         
-        await start_dialog(dialog_manager, current_state)
+        await start_dialog(dialog_manager, current_state, start_data)
+        
 
     log_message = f"Bot is starting for {suffix} {user_data.id} ({user_data.full_name})"
     logging.warning(log_message)
@@ -108,12 +111,14 @@ async def handle_error_and_restart(event: ErrorEvent, dialog_manager: DialogMana
 async def start_dialog(
         dialog_manager: DialogManager, 
         state: Feedback,
+        start_data: dict = None,
         mode: StartMode = StartMode.RESET_STACK,
-        show_mode=ShowMode.DELETE_AND_SEND
+        show_mode=ShowMode.DELETE_AND_SEND,
         ):
 
     await dialog_manager.start(
         state=state, 
         mode=mode,
         show_mode=show_mode,
+        data=start_data
         )

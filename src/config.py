@@ -26,7 +26,6 @@ class MessageEffect(BaseModel):
     poo: str
 
 
-
 class Owner(BaseModel):
 
     id: PositiveInt
@@ -54,8 +53,12 @@ class Google(BaseModel):
 
     feedbacks_and_accesses_id: str
     accesses_tab: str
+    accesses_tab_length: PositiveInt
     content_id: str
     content_tab: str
+    content_tab_length: PositiveInt
+    disciplines_tab_length: PositiveInt
+    syllabus_tab: str
     service_account_json: str
 
 

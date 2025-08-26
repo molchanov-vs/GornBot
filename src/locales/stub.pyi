@@ -35,13 +35,15 @@ class Feedback:
 
 Выбери дисциплину:"""]: ...
     @staticmethod
-    def task() -> Literal["""Дисциплина выбрана.
+    def task(*, discipline: PossibleValue) -> Literal["""Выбрана дисциплина &lt;b&gt;{ $discipline }&lt;/b&gt;.
 
-Выбери задачу"""]: ...
+Выбери задачу:"""]: ...
     @staticmethod
-    def input() -> Literal["""Описание Задания (включая Критерии)
+    def input(*, syllabus: PossibleValue, task_description: PossibleValue, task_name: PossibleValue) -> Literal["""Выбрано задание &lt;b&gt;{ $task_name }&lt;/b&gt;. 
+{ $task_description }
 
-Силлабус (если есть)"""]: ...
+Силлабус: 
+{ $syllabus }"""]: ...
     @staticmethod
     def audio() -> Literal["""Вот транскрибация:"""]: ...
     @staticmethod
