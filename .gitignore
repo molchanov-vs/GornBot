@@ -10,6 +10,7 @@ get_history.py
 /logs
 /session
 *.sh
+*.json
 /data
 /old_logs
 /dump

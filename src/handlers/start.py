@@ -22,7 +22,7 @@ from fluentogram import TranslatorHub
 
 router: Router = Router()
 
-MESSAGE_NOT_TEACHER = "Похоже, что вы не являетесь преподавателем. Пожалуйста, обратитесь к администратору."
+MESSAGE_NOT_TEACHER = "Похоже, что вы не являетесь преподавателем либо у вас нет активных дисциплин. Пожалуйста, обратитесь к администратору."
 
 
 def get_current_state(

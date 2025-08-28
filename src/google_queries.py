@@ -47,8 +47,8 @@ async def get_teachers(config: Config) -> list[Teacher]:
     read_res = await sheet.read(f"{config.google.accesses_tab}!A1:C{config.google.accesses_tab_length}")
 
     teachers: list[Teacher] = [
-        Teacher(id=i[1], name=i[0], disciplines=i[2].split(", ")) 
-        for i in read_res.get("values")[1:]]
+        Teacher(id=row[1], name=row[0], disciplines=row[2].split(", ")) 
+        for row in read_res.get("values")[1:] if len(row) > 2]
 
     return teachers
 
@@ -91,7 +91,7 @@ async def get_list_of_tasks(
     task_data: dict = {}
 
     for discipline, disc_id in disciplines:
-        read_tasks = await sheet.read(f"{discipline}!A2:B")
+        read_tasks = await sheet.read(f"{disc_id}!A2:B")
         task_data[disc_id] = read_tasks.get("values")
 
     return task_data
@@ -132,3 +132,20 @@ async def get_data_for_dialog(
 
     return dialog_data
 
+
+
+async def put_feedback(
+        config: Config,
+        user_id: int,
+        current_discipline_name: str,
+        current_task_name: str,
+        feedback: str):
+    
+    sheet: SheetsAsync = get_teachers_sheets_instance(config)
+
+    await sheet.append(
+        f"{user_id}!A1:C",
+        [
+            [current_discipline_name, current_task_name, feedback]
+        ]
+    )

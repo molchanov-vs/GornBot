@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING
 
 from aiogram_dialog import Dialog, Window, DialogManager
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from aiogram_dialog.widgets.kbd import Back, Select, Column
 from aiogram_dialog.widgets.text import Format, Const
-from aiogram_dialog.widgets.input import TextInput
+from aiogram_dialog.widgets.input import TextInput, ManagedTextInput
 from aiogram.fsm.storage.redis import RedisStorage
 
-from ..google_queries import get_list_of_disciplines
+from ..google_queries import put_feedback
 
 from ..utils.utils import get_middleware_data
 from ..custom_types import Teacher
@@ -96,6 +96,22 @@ async def discipline_selection(
     await dialog_manager.next()
 
 
+# Хэндлер, который сработает, если пользователь ввел корректный возраст
+async def process_feedback_text(
+        message: Message, 
+        widget: ManagedTextInput, 
+        dialog_manager: DialogManager, 
+        text: str) -> None:
+
+    _, config, user_data = get_middleware_data(dialog_manager)
+    current_discipline_name = dialog_manager.dialog_data.get("current_discipline_name", "Unknown")
+    current_task_name = dialog_manager.dialog_data.get("current_task_name", "Unknown")
+
+    await put_feedback(config, user_data.id, current_discipline_name, current_task_name, text)
+    
+    await message.answer(text=f'Ваш фидбек добавлен')
+
+
 async def task_selection(
         callback: CallbackQuery, 
         widget: Select,
@@ -150,6 +166,10 @@ dialog = Dialog(
     Window(
         Format("{input_header}"),
         Back(Format("{back_btn}")),
+        TextInput(
+            id="input_text_feedback",
+            on_success=process_feedback_text,
+        ),
         state=Feedback.INPUT
     ),
 
