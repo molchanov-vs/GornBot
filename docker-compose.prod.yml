@@ -1,21 +1,23 @@
 services:
-  # Redis service for bot state management
+  # Redis service for bot state management (PROD)
   redis:
     image: redis:8.2-alpine
     container_name: gornbot-redis-prod
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6379:6379"  # Standard Redis port for production
     volumes:
       - redis_data_prod:/data
     command: redis-server --appendonly yes
+    networks:
+      - gornbot-network-prod
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # Telegram bot application
+  # Telegram bot application (PROD)
   bot:
     build: .
     container_name: gornbot-app-prod
@@ -25,8 +27,9 @@ services:
         condition: service_healthy
     environment:
       - TZ=Europe/Moscow
+      - ENVIRONMENT=prod
     volumes:
-      - ./logs:/app/logs
+      - ./logs:/app/logs  # Production logs directory
       - ./config.yaml:/app/config.yaml:ro
     networks:
       - gornbot-network-prod

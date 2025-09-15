@@ -62,7 +62,7 @@ class Google(BaseModel):
     service_account_json: str
 
 
-class OpenAI(BaseModel):
+class LLM(BaseModel):
 
     api_key: str
     model: str
@@ -79,28 +79,44 @@ class Config(BaseModel):
 
     system: System
     bot: Bot
+    bot_test: Bot
     message_effect: MessageEffect
     owner: Owner
     admins: Admins
     superadmins: Superadmins
     redis: Redis
     google: Google
-    openai: OpenAI
+    openai: LLM
+    gemini: LLM
     system_prompt: SystemPrompt
 
 
 # Load the YAML configuration file
 def load_config() -> Config:
+    import os
 
     with open('config.yaml', 'r') as file:
         config_data = yaml.safe_load(file)
 
+    # Get environment variable to determine which bot config to use
+    environment = os.getenv('ENVIRONMENT', 'prod')
+    
+    # Select the appropriate bot configuration
+    if environment == 'dev':
+        # For development, swap bot and bot_test so bot points to bot_test config
+        config_data['bot'] = config_data['bot_test']
+        print(config_data['bot'])
+        print(f"🔧 Development mode: Using test bot configuration: {config_data['bot']['name']}")
+    else:
+        # Use bot configuration for production (keep as is)
+        print(f"🚀 Production mode: Using production bot configuration: {config_data['bot']['name']}")
+
     try:
         config: Config = Config(**config_data)
+        return config
     except ValidationError as e:
         print("Config validation error:", e.json(indent=4))
-
-    return config
+        raise
     
     
 def main():

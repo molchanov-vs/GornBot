@@ -1,37 +1,38 @@
 services:
-  # Redis service for bot state management
+  # Redis service for bot state management (DEV)
   redis:
     image: redis:8.2-alpine
-    container_name: gornbot-redis
+    container_name: gornbot-redis-dev
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"  # Use different port to avoid conflict with prod
     volumes:
-      - redis_data:/data
+      - redis_data_dev:/data
     command: redis-server --appendonly yes
     networks:
-      - gornbot-network
+      - gornbot-network-dev
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # Telegram bot application
+  # Telegram bot application (DEV)
   bot:
     build: .
-    container_name: gornbot-app
+    container_name: gornbot-app-dev
     restart: unless-stopped
     depends_on:
       redis:
         condition: service_healthy
     environment:
       - TZ=Europe/Moscow
+      - ENVIRONMENT=dev
     volumes:
-      - ./logs:/app/logs
+      - ./dev_logs:/app/logs
       - ./config.yaml:/app/config.yaml:ro
     networks:
-      - gornbot-network
+      - gornbot-network-dev
     healthcheck:
       test: ["CMD", "python", "health_check.py"]
       interval: 30s
@@ -40,9 +41,9 @@ services:
       start_period: 40s
 
 volumes:
-  redis_data:
+  redis_data_dev:
     driver: local
 
 networks:
-  gornbot-network:
+  gornbot-network-dev:
     driver: bridge

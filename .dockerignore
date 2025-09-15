@@ -53,6 +53,7 @@ Thumbs.db
 
 # Logs
 logs/
+dev_logs/
 *.log
 
 # Documentation
