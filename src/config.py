@@ -105,7 +105,6 @@ def load_config() -> Config:
     if environment == 'dev':
         # For development, swap bot and bot_test so bot points to bot_test config
         config_data['bot'] = config_data['bot_test']
-        print(config_data['bot'])
         print(f"🔧 Development mode: Using test bot configuration: {config_data['bot']['name']}")
     else:
         # Use bot configuration for production (keep as is)

@@ -44,6 +44,8 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
 
     teachers_ids: set[int] = set([teacher.id for teacher in teachers])
 
+    await add_action(dialog_manager, Action.START)
+
     if user_data.id not in teachers_ids:
 
         connect_btn = InlineKeyboardButton(
@@ -59,7 +61,6 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
     
     else:
         suffix = "a teacher"
-        await add_action(dialog_manager, Action.START)
 
         current_state = get_current_state(dialog_manager, config, user_data.id)
 

@@ -9,9 +9,8 @@ get_history.py
 /jsons
 /logs
 /session
-*.sh
 *.json
-/data
+/dev_data
 /old_logs
 /dev_logs
 /dump
