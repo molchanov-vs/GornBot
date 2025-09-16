@@ -13,6 +13,7 @@ from .genai import generate_transcript
 from .genai import generate_feedback
 
 from ..enums import DialogDataKeys
+from ..google_queries import put_feedback
 
 MAX_BYTES = 10 * 1024 * 1024
 
@@ -73,13 +74,22 @@ async def handle_transcription(
     await process_text(dialog_manager)
 
 
-async def process_text(dialog_manager: DialogManager):
+async def redo_feedback(
+    callback: CallbackQuery, 
+    button: Button, 
+    dialog_manager: DialogManager):
+
+    await put_feedback(dialog_manager, False)
+    await process_text(dialog_manager, default_config=False)
+
+
+async def process_text(dialog_manager: DialogManager, default_config: bool = True):
 
     bot, config, user_data = get_middleware_data(dialog_manager)
     typing_task = asyncio.create_task(send_typing_action(user_data.id, bot))
 
     try:
-        feedback: str = await generate_feedback(config, dialog_manager.dialog_data[DialogDataKeys.FOR_GEMINI])
+        feedback: str = await generate_feedback(config, dialog_manager.dialog_data[DialogDataKeys.FOR_GEMINI], default_config)
 
         dialog_manager.dialog_data[DialogDataKeys.FOR_GEMINI][DialogDataKeys.FEEDBACK_TEXT] = feedback
 

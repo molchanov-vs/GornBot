@@ -19,14 +19,11 @@ from ..queries import add_action
 from ..google_queries import get_teachers, get_data_for_dialog
 from ..config import Config
 
-from pprint import pprint
-
 from fluentogram import TranslatorHub
 
 router: Router = Router()
 
 MESSAGE_NOT_TEACHER = "Похоже, что вы не являетесь преподавателем либо у вас нет активных дисциплин. Пожалуйста, обратитесь к администратору."
-
 
 def get_current_state(
         dialog_manager: DialogManager, 

@@ -14,7 +14,8 @@ from ..enums import DialogDataKeys
 from ..google_queries import put_feedback
 from ..utils.utils import get_middleware_data
 
-from ..utils.feedback_handlers import handle_voice, process_feedback_text, handle_transcription
+from ..utils.feedback_handlers import \
+    handle_voice, process_feedback_text, handle_transcription, redo_feedback
 
 from ..states import Feedback
 
@@ -86,10 +87,9 @@ async def get_disciplines(
         dialog_manager: DialogManager,
         **kwargs):
 
-    # _, config, user_data = get_middleware_data(dialog_manager)
-    disciplines = [(v.get("name", "None"), k) for k, v in dialog_manager.start_data.items()]
+    disciplines = [(v.get("name", "None"), k) for k, v in dialog_manager.start_data.items() if k != DialogDataKeys.FOR_GEMINI]
 
-    return {"disciplines": disciplines}
+    return {"disciplines": sorted(disciplines, key=lambda x: x[0])}
 
 
 async def get_tasks(
@@ -119,7 +119,6 @@ async def discipline_selection(
     dialog_manager.dialog_data[DialogDataKeys.DISCIPLINE_ID] = item_id
     dialog_manager.dialog_data[DialogDataKeys.DISCIPLINE_NAME] = discipline_name
     
-    print(f'Выбрана дисциплина: {discipline_name} (id={item_id})')
     await dialog_manager.next()
 
 
@@ -165,11 +164,6 @@ async def handle_feedback(callback: CallbackQuery, button: Button, dialog_manage
     await dialog_manager.switch_to(Feedback.INPUT)
 
 
-async def redo_feedback(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
-
-    pass
-
-
 async def get_data_for_input(
         dialog_manager: DialogManager,
         **kwargs):
@@ -179,9 +173,7 @@ async def get_data_for_input(
     if transcription_from_audio:
         data.update({"transcription_from_audio": transcription_from_audio})
 
-    return data
-    
-
+    return data   
 
 # Dialog with windows using Format for localization
 dialog = Dialog(
@@ -218,11 +210,12 @@ dialog = Dialog(
     ),
 
     Window(
+        Format("{task_header}", when=~F["transcription_from_audio"]),
         Format("{input_header}", when=~F["transcription_from_audio"]),
         Format("{transcription_from_audio}", when=F["transcription_from_audio"]),
         Row(
             Back(Format("{back_btn}")),
-            Button(Const("⌯⌲ Отправить"), id="send_btn_id", on_click=handle_transcription, when=~F["transcription_from_audio"]),
+            Button(Const("⌯⌲ Отправить"), id="send_btn_id", on_click=handle_transcription, when=F["transcription_from_audio"]),
         ),
         TextInput(
             id="input_text_feedback",

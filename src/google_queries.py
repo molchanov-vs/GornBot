@@ -106,11 +106,30 @@ async def get_list_of_tasks(
 
     sheet: SheetsAsync = get_content_sheets_instance(config)
 
-    task_data: dict = {}
+    task_data: dict[str, list[list[str]]] = {}
 
-    for discipline_name, discipline_id in disciplines:
-        read_tasks = await sheet.read(f"{discipline_id}!A2:C")
-        task_data[discipline_id] = read_tasks.get("values")
+    spreadsheet_meta = await sheet.get_spreadsheet()
+    existing_tabs = {
+        sheet_info["properties"]["title"]
+        for sheet_info in spreadsheet_meta.get("sheets", [])
+    }
+
+    ranges_to_fetch: list[str] = []
+    for _, discipline_id in disciplines:
+        if discipline_id not in existing_tabs:
+            task_data[discipline_id] = []
+            continue
+
+        ranges_to_fetch.append(f"{discipline_id}!A2:C")
+        task_data.setdefault(discipline_id, [])
+
+    if ranges_to_fetch:
+        batch_result = await sheet.batch_get(ranges_to_fetch)
+        for value_range in batch_result.get("valueRanges", []):
+            range_name = value_range.get("range", "")
+            sheet_title = range_name.split("!", 1)[0].strip("'") if range_name else ""
+            if sheet_title in task_data:
+                task_data[sheet_title] = value_range.get("values", [])
 
     return task_data
 
