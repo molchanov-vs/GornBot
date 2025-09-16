@@ -11,5 +11,4 @@ class Feedback(StatesGroup):
     DISCIPLINE = State()
     TASK = State()
     INPUT = State()
-    AUDIO = State()
     OUTPUT = State()

@@ -2,12 +2,10 @@ import asyncio
 import io
 import logging
 
-from aiogram.types import Message
-from aiogram.fsm.storage.redis import RedisStorage
+from aiogram.types import Message, CallbackQuery
+from aiogram_dialog.widgets.kbd import Button
 
 from aiogram_dialog import DialogManager
-from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.api.entities import MediaAttachment
 from aiogram_dialog.widgets.input import MessageInput, ManagedTextInput
 
 from .utils import get_middleware_data, send_typing_action
@@ -36,8 +34,8 @@ async def handle_voice(message: Message, widget: MessageInput, dialog_manager: D
                 voice_file = io.BytesIO()
                 await bot.download(message.voice.file_id, destination=voice_file)
                 text = await generate_transcript(config, voice_file)
-                print(text)
-                await bot.send_message(user_data.id, text)
+                dialog_manager.dialog_data[DialogDataKeys.FOR_GEMINI][DialogDataKeys.TRANSCRIPTION_FROM_AUDIO] = text
+
             except Exception as e:
                 logging.error(f"Error generating transcript for {user_data.id} ({user_data.full_name}): {e}")
                 # await bot.send_message(user_data.id, f"❌ Ошибка при генерации транскрипта: {e}")
@@ -60,10 +58,24 @@ async def process_feedback_text(
         dialog_manager: DialogManager, 
         text: str) -> None:
 
-    bot, config, user_data = get_middleware_data(dialog_manager)
-
     dialog_manager.dialog_data[DialogDataKeys.FOR_GEMINI][DialogDataKeys.TEXT_FROM_TEACHER] = text
 
+    await process_text(dialog_manager)
+
+
+async def handle_transcription(
+    callback: CallbackQuery, 
+    button: Button, 
+    dialog_manager: DialogManager):
+
+
+    dialog_manager.dialog_data[DialogDataKeys.FOR_GEMINI][DialogDataKeys.TEXT_FROM_TEACHER] = dialog_manager.dialog_data.get(DialogDataKeys.FOR_GEMINI, {}).get(DialogDataKeys.TRANSCRIPTION_FROM_AUDIO)
+    await process_text(dialog_manager)
+
+
+async def process_text(dialog_manager: DialogManager):
+
+    bot, config, user_data = get_middleware_data(dialog_manager)
     typing_task = asyncio.create_task(send_typing_action(user_data.id, bot))
 
     try:

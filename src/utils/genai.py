@@ -15,7 +15,6 @@ async def generate_transcript(config: Config, voice_file: io.BytesIO):
 
     voice_file.seek(0)
 
-    # ✅ provide mime_type and a name
     uploaded = await client.aio.files.upload(
         file=voice_file,        
         config=UploadFileConfig(

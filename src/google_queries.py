@@ -1,6 +1,5 @@
 from aiogram_dialog import DialogManager
 
-
 from .utils.sheets_async import SheetsAsync
 
 from .config import Config
@@ -8,7 +7,6 @@ from .utils.utils import get_middleware_data
 from .custom_types import Teacher
 
 from .enums import DialogDataKeys
-from pprint import pprint
 
 
 # Multiple singletons for different spreadsheets

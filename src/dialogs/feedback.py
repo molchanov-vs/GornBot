@@ -1,5 +1,6 @@
 from typing import Any, TYPE_CHECKING
 
+from aiogram import F
 from aiogram_dialog import Dialog, Window, DialogManager
 from aiogram.types import CallbackQuery
 from aiogram.enums import ContentType
@@ -13,7 +14,7 @@ from ..enums import DialogDataKeys
 from ..google_queries import put_feedback
 from ..utils.utils import get_middleware_data
 
-from ..utils.feedback_handlers import handle_voice, process_feedback_text
+from ..utils.feedback_handlers import handle_voice, process_feedback_text, handle_transcription
 
 from ..states import Feedback
 
@@ -168,6 +169,20 @@ async def redo_feedback(callback: CallbackQuery, button: Button, dialog_manager:
 
     pass
 
+
+async def get_data_for_input(
+        dialog_manager: DialogManager,
+        **kwargs):
+
+    data = {}
+    transcription_from_audio = dialog_manager.dialog_data.get(DialogDataKeys.FOR_GEMINI, {}).get(DialogDataKeys.TRANSCRIPTION_FROM_AUDIO)
+    if transcription_from_audio:
+        data.update({"transcription_from_audio": transcription_from_audio})
+
+    return data
+    
+
+
 # Dialog with windows using Format for localization
 dialog = Dialog(
 
@@ -203,8 +218,12 @@ dialog = Dialog(
     ),
 
     Window(
-        Format("{input_header}"),
-        Back(Format("{back_btn}")),
+        Format("{input_header}", when=~F["transcription_from_audio"]),
+        Format("{transcription_from_audio}", when=F["transcription_from_audio"]),
+        Row(
+            Back(Format("{back_btn}")),
+            Button(Const("⌯⌲ Отправить"), id="send_btn_id", on_click=handle_transcription, when=~F["transcription_from_audio"]),
+        ),
         TextInput(
             id="input_text_feedback",
             on_success=process_feedback_text,
@@ -214,6 +233,7 @@ dialog = Dialog(
             content_types= ContentType.VOICE,
             id="voice_feedback_id"
         ),
+        getter=get_data_for_input,
         state=Feedback.INPUT
     ),
 
