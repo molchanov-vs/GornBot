@@ -1,13 +1,16 @@
 from .utils.sheets_async import SheetsAsync
 
-
 from .config import Config
 from .custom_types import Teacher
+
+from .enums import DialogDataKeys
+from pprint import pprint
 
 
 # Multiple singletons for different spreadsheets
 _teachers_sheets_instance: SheetsAsync | None = None
 _content_sheets_instance: SheetsAsync | None = None
+_prompts_sheets_instance: SheetsAsync | None = None
 
 
 def get_teachers_sheets_instance(config: Config) -> SheetsAsync:
@@ -37,6 +40,19 @@ def get_content_sheets_instance(config: Config) -> SheetsAsync:
     return _content_sheets_instance
 
 
+def get_prompts_sheets_instance(config: Config) -> SheetsAsync:
+    """
+    Get or create a singleton SheetsAsync instance for prompts spreadsheet.
+    """
+    global _prompts_sheets_instance
+    if _prompts_sheets_instance is None:
+        _prompts_sheets_instance = SheetsAsync(
+            spreadsheet_id = config.google.prompt_id,
+            sa_json_path = config.google.service_account_json
+        )
+    return _prompts_sheets_instance
+
+
 # Teachers spreadsheet operations
 async def get_teachers(config: Config) -> list[Teacher]:
     """
@@ -44,7 +60,7 @@ async def get_teachers(config: Config) -> list[Teacher]:
     """
     sheet: SheetsAsync = get_teachers_sheets_instance(config)
 
-    read_res = await sheet.read(f"{config.google.accesses_tab}!A1:C{config.google.accesses_tab_length}")
+    read_res = await sheet.read(f"{config.google.accesses_tab}!A1:C")
 
     teachers: list[Teacher] = [
         Teacher(id=row[1], name=row[0], disciplines=row[2].split(", ")) 
@@ -73,7 +89,7 @@ async def get_list_of_disciplines(
 
     sheet: SheetsAsync = get_teachers_sheets_instance(config)
 
-    read_discs = await sheet.read(f"{config.google.accesses_tab}!E1:F{config.google.disciplines_tab_length}")
+    read_discs = await sheet.read(f"{config.google.accesses_tab}!E1:F")
 
     discs = dict([(el[0], el[1]) for el in read_discs.get("values")[1:]])
 
@@ -90,22 +106,30 @@ async def get_list_of_tasks(
 
     task_data: dict = {}
 
-    for discipline, disc_id in disciplines:
-        read_tasks = await sheet.read(f"{disc_id}!A2:B")
-        task_data[disc_id] = read_tasks.get("values")
+    for discipline_name, discipline_id in disciplines:
+        read_tasks = await sheet.read(f"{discipline_id}!A2:C")
+        task_data[discipline_id] = read_tasks.get("values")
 
     return task_data
 
 
 async def get_syllabus(
         config: Config,
-        disciplines: list[tuple[str, str]]) -> list[tuple[str, str]]:
+        disciplines: list[tuple[str, str]]) -> list[tuple[str, str, str]]:
     
     sheet: SheetsAsync = get_content_sheets_instance(config)
-    read_syllabases = await sheet.read(f"{config.google.syllabus_tab}!A2:B")
+    read_syllabases = await sheet.read(f"{config.google.syllabus_tab}!A2:C")
     
     return read_syllabases.get("values")
 
+
+async def get_prompts(
+        config: Config) -> list[tuple[str, str]]:
+    
+    sheet: SheetsAsync = get_prompts_sheets_instance(config)
+    read_prompts = await sheet.read(f"{config.google.prompt_tab}!K2:K")
+
+    return read_prompts.get("values")
 
 
 async def get_data_for_dialog(
@@ -116,19 +140,25 @@ async def get_data_for_dialog(
     dialog_data: dict = {}
 
     disciplines: list[tuple[str, str]] = await get_list_of_disciplines(config, teachers, user_id)
-    syllabus: list[tuple[str, str]] = await get_syllabus(config, disciplines)
-    tasks: list[tuple[str, str]] = await get_list_of_tasks(config, disciplines)
+    syllabus: list[tuple[str, str, str]] = await get_syllabus(config, disciplines)
+    tasks: list[tuple[str, str, str]] = await get_list_of_tasks(config, disciplines)
+    prompts: list[tuple[str, str]] = await get_prompts(config)
 
-    for discipline, disc_id in disciplines:
-        dialog_data[disc_id] = {
-            "name": discipline,
-            "syllabus": [el[1] for el in syllabus if el[0] == discipline][0]
+    for discipline_name, discipline_id in disciplines:
+        dialog_data[discipline_id] = {
+            "name": discipline_name,
+            "syllabus": [el[2] for el in syllabus if el[0] == discipline_name][0]
             }
 
-        for ind, task in enumerate(tasks[disc_id]):
-            dialog_data[disc_id][f"task_{ind+1}"] = {
-                "name": task[0],
-                "description": task[1]}
+        for task_name, index, task_description in tasks[discipline_id]:
+            dialog_data[discipline_id][index] = {
+                "name": task_name,
+                "description": task_description}
+
+    dialog_data[DialogDataKeys.FOR_GEMINI] = {
+        DialogDataKeys.TEMPERATURE: prompts[2][0],
+        DialogDataKeys.PROMPT: prompts[-1][0]
+    }
 
     return dialog_data
 

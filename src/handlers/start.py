@@ -18,6 +18,8 @@ from ..queries import add_action
 from ..google_queries import get_teachers, get_data_for_dialog
 from ..config import Config
 
+from pprint import pprint
+
 from fluentogram import TranslatorHub
 
 router: Router = Router()
@@ -65,8 +67,6 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
         current_state = get_current_state(dialog_manager, config, user_data.id)
 
         start_data: dict = await get_data_for_dialog(config, teachers, user_data.id)
-
-        print("START:\n", start_data)
         
         await start_dialog(dialog_manager, current_state, start_data)
         

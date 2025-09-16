@@ -53,12 +53,11 @@ class Google(BaseModel):
 
     feedbacks_and_accesses_id: str
     accesses_tab: str
-    accesses_tab_length: PositiveInt
     content_id: str
     content_tab: str
-    content_tab_length: PositiveInt
-    disciplines_tab_length: PositiveInt
     syllabus_tab: str
+    prompt_id: str
+    prompt_tab: str
     service_account_json: str
 
 
@@ -68,11 +67,6 @@ class LLM(BaseModel):
     model: str
     provider: str
     embedding_model: str
-
-
-class SystemPrompt(BaseModel):
-
-    prompt: str
 
 
 class Config(BaseModel):
@@ -88,7 +82,6 @@ class Config(BaseModel):
     google: Google
     openai: LLM
     gemini: LLM
-    system_prompt: SystemPrompt
 
 
 # Load the YAML configuration file

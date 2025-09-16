@@ -5,7 +5,7 @@ services:
     container_name: gornbot-redis-dev
     restart: no
     ports:
-      - "6379:6379"  # Use different port to avoid conflict with prod
+      - "6390:6379"  # Use different port to avoid conflict with prod
     command: >
       redis-server
       --appendonly no
@@ -46,4 +46,5 @@ services:
 
 networks:
   gornbot-network-dev:
+    name: gornbot-network-dev
     driver: bridge
