@@ -48,4 +48,5 @@ class DialogDataKeys(str, Enum):
     UNKNOWN = "unknown"
     TEMPERATURE = "temperature"
     PROMPT = "prompt"
+    TEXT_FROM_TEACHER = "text_from_teacher"
     FEEDBACK_TEXT = "feedback_text"

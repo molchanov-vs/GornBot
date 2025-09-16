@@ -1,6 +1,10 @@
+from aiogram_dialog import DialogManager
+
+
 from .utils.sheets_async import SheetsAsync
 
 from .config import Config
+from .utils.utils import get_middleware_data
 from .custom_types import Teacher
 
 from .enums import DialogDataKeys
@@ -165,17 +169,28 @@ async def get_data_for_dialog(
 
 
 async def put_feedback(
-        config: Config,
-        user_id: int,
-        current_discipline_name: str,
-        current_task_name: str,
-        feedback: str):
+        dialog_manager: DialogManager,
+        like: bool):
+
+    _, config, user_data = get_middleware_data(dialog_manager)
     
     sheet: SheetsAsync = get_teachers_sheets_instance(config)
 
+    discipline_name = dialog_manager.dialog_data.get(DialogDataKeys.FOR_GEMINI, {}).get(
+        DialogDataKeys.DISCIPLINE_NAME, DialogDataKeys.UNKNOWN)
+
+    task_name = dialog_manager.dialog_data.get(DialogDataKeys.FOR_GEMINI, {}).get(
+        DialogDataKeys.TASK_NAME, DialogDataKeys.UNKNOWN)
+
+    text_from_teacher = dialog_manager.dialog_data.get(DialogDataKeys.FOR_GEMINI, {}).get(
+        DialogDataKeys.TEXT_FROM_TEACHER, DialogDataKeys.UNKNOWN)
+
+    feedback = dialog_manager.dialog_data.get(DialogDataKeys.FOR_GEMINI, {}).get(
+        DialogDataKeys.FEEDBACK_TEXT, DialogDataKeys.UNKNOWN)
+
     await sheet.append(
-        f"{user_id}!A1:C",
+        f"{user_data.id}!A1:E",
         [
-            [current_discipline_name, current_task_name, feedback]
+            [discipline_name, task_name, text_from_teacher, feedback, int(like)]
         ]
     )

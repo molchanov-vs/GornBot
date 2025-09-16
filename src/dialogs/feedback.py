@@ -5,12 +5,12 @@ from aiogram.types import CallbackQuery
 from aiogram.enums import ContentType
 from aiogram.fsm.storage.redis import RedisStorage
 
-from aiogram_dialog.widgets.kbd import Back, Select, Column
-from aiogram_dialog.widgets.text import Format
+from aiogram_dialog.widgets.kbd import Back, Select, Column, Button, Row
+from aiogram_dialog.widgets.text import Format, Const
 from aiogram_dialog.widgets.input import TextInput, MessageInput
 
 from ..enums import DialogDataKeys
-
+from ..google_queries import put_feedback
 from ..utils.utils import get_middleware_data
 
 from ..utils.feedback_handlers import handle_voice, process_feedback_text
@@ -137,9 +137,36 @@ async def task_selection(
     dialog_manager.dialog_data[DialogDataKeys.TASK_ID] = item_id
     dialog_manager.dialog_data[DialogDataKeys.TASK_NAME] = task_name
     
-    print(f'Выбрано задание: {task_name} (id={item_id})')
     await dialog_manager.next()
 
+
+async def get_data_for_output(
+        dialog_manager: DialogManager,
+        **kwargs):
+
+    return {"feedback_text": dialog_manager.dialog_data.get(DialogDataKeys.FOR_GEMINI, {}).get(DialogDataKeys.FEEDBACK_TEXT, DialogDataKeys.UNKNOWN)}
+
+
+async def new_feedback(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+
+    await dialog_manager.switch_to(Feedback.INPUT)
+
+
+async def handle_feedback(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+
+    if callback.data == "like_id":
+        like = True
+    else:
+        like = False
+
+    await put_feedback(dialog_manager, like)
+
+    await dialog_manager.switch_to(Feedback.INPUT)
+
+
+async def redo_feedback(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
+
+    pass
 
 # Dialog with windows using Format for localization
 dialog = Dialog(
@@ -191,7 +218,14 @@ dialog = Dialog(
     ),
 
     Window(
-        Format("{output_header}"),
+        Format("{feedback_text}"),
+        Row(
+            Button(Const("👎"), id="dislike_id", on_click=handle_feedback),
+            Button(Const("👍"), id="like_id", on_click=handle_feedback),
+        ),
+        Button(Const("🔄 Перегенерировать"), id="redo_btn_id", on_click=redo_feedback),
+        Button(Const("🚀 Начать новый фидбек"), id="new_feedback_btn_id", on_click=new_feedback),
+        getter=get_data_for_output,
         state=Feedback.OUTPUT
     ),
 

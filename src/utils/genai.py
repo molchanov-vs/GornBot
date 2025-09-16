@@ -35,8 +35,6 @@ async def generate_transcript(config: Config, voice_file: io.BytesIO):
 
 async def generate_feedback(config: Config, data: dict):
 
-    pprint(data)
-
     client = genai.Client(api_key=config.gemini.api_key)
 
     response = await client.aio.models.generate_content(
@@ -45,11 +43,11 @@ async def generate_feedback(config: Config, data: dict):
             system_instruction=data[DialogDataKeys.PROMPT]
         ),
         contents=[
-            data[DialogDataKeys.FEEDBACK_TEXT],
+            data[DialogDataKeys.SYLLABUS],
             data[DialogDataKeys.DISCIPLINE_NAME],
             data[DialogDataKeys.TASK_NAME],
             data[DialogDataKeys.TASK_DESCRIPTION],
-            data[DialogDataKeys.SYLLABUS]
+            data[DialogDataKeys.TEXT_FROM_TEACHER],
         ]
     )
     return response.text

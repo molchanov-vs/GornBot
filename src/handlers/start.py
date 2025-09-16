@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 from aiogram import Router, F
 from aiogram.types import Message, ErrorEvent, InlineKeyboardButton, InlineKeyboardMarkup
@@ -13,7 +14,7 @@ from my_tools import DialogManagerKeys
 from ..custom_types import Teacher
 from ..states import Feedback
 from ..enums import Database, Action
-from ..utils.utils import get_middleware_data
+from ..utils.utils import get_middleware_data, send_typing_action
 from ..queries import add_action
 from ..google_queries import get_teachers, get_data_for_dialog
 from ..config import Config
@@ -40,7 +41,7 @@ def get_current_state(
 @router.message(CommandStart())
 async def process_start(message: Message, dialog_manager: DialogManager) -> None:
 
-    _, config, user_data = get_middleware_data(dialog_manager)
+    bot, config, user_data = get_middleware_data(dialog_manager)
 
     teachers: list[Teacher] = await get_teachers(config)
 
@@ -66,7 +67,16 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
 
         current_state = get_current_state(dialog_manager, config, user_data.id)
 
-        start_data: dict = await get_data_for_dialog(config, teachers, user_data.id)
+        typing_task = asyncio.create_task(send_typing_action(user_data.id, bot))
+
+        try:
+            start_data: dict = await get_data_for_dialog(config, teachers, user_data.id)
+            
+        except Exception as e:
+            logging.error(f"Error getting data for dialog for {user_data.id} ({user_data.full_name}): {e}")
+            # await bot.send_message(user_data.id, f"❌ Ошибка при получении данных для диалога: {e}")
+        finally:
+            typing_task.cancel()
         
         await start_dialog(dialog_manager, current_state, start_data)
         

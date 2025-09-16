@@ -1,5 +1,6 @@
 import os
 import re
+import asyncio
 
 from aiogram import Bot
 from aiogram.types import User
@@ -10,6 +11,17 @@ from my_tools import DialogManagerKeys
 
 from ..custom_types import UserData
 from ..config import Config
+
+
+
+
+async def send_typing_action(chat_id: int, bot: Bot, delay: float = 1.0):
+    try:
+        while True:
+            await bot.send_chat_action(chat_id, "typing")
+            await asyncio.sleep(delay)
+    except asyncio.CancelledError:
+        pass
 
 
 
