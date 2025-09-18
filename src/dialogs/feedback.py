@@ -3,7 +3,7 @@ from typing import Any, TYPE_CHECKING
 from aiogram import F
 from aiogram_dialog import Dialog, Window, DialogManager
 from aiogram.types import CallbackQuery
-from aiogram.enums import ContentType
+from aiogram.enums import ContentType, ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 
 from aiogram_dialog.widgets.kbd import Back, Select, Column, Button, Row
@@ -69,15 +69,16 @@ async def dialog_get_data(
 
     data = {
         "back_btn": i18n.service.back_btn(),
-        "discipline_header": i18n.feedback.discipline(username=user_data.first_name),
+        "discipline_header": i18n.feedback.discipline(name=user_data.first_name),
         "task_header": i18n.feedback.task(discipline=discipline_name),
         "task_name": task_name,
         "input_header": i18n.feedback.input(
             task_name=task_name, 
-            task_description=f"{task_description[:50]}...", 
-            syllabus=f"{syllabus[:50]}..."),
+            # task_description=f"{task_description[:50]}...", 
+            # syllabus=f"{syllabus[:50]}..."
+            ),
         "audio": i18n.feedback.audio(),
-        "output": i18n.feedback.output()
+        "output_header": i18n.feedback.output()
     }
 
     return data
@@ -149,6 +150,9 @@ async def get_data_for_output(
 
 async def new_feedback(callback: CallbackQuery, button: Button, dialog_manager: DialogManager):
 
+    dialog_manager.dialog_data[DialogDataKeys.FOR_GEMINI].pop("transcription_from_audio", None)
+
+    await put_feedback(dialog_manager, True)
     await dialog_manager.switch_to(Feedback.INPUT)
 
 
@@ -171,6 +175,7 @@ async def get_data_for_input(
     data = {}
     transcription_from_audio = dialog_manager.dialog_data.get(DialogDataKeys.FOR_GEMINI, {}).get(DialogDataKeys.TRANSCRIPTION_FROM_AUDIO)
     if transcription_from_audio:
+        data.update({"inform_message": "Вы можете проверить транскрибацию и исправить её, если она некорректна:"})
         data.update({"transcription_from_audio": transcription_from_audio})
 
     return data   
@@ -210,12 +215,18 @@ dialog = Dialog(
     ),
 
     Window(
-        Format("{task_header}", when=~F["transcription_from_audio"]),
         Format("{input_header}", when=~F["transcription_from_audio"]),
-        Format("{transcription_from_audio}", when=F["transcription_from_audio"]),
+
+        Format("{inform_message}", when=F["inform_message"]),
+        Format("<pre>{transcription_from_audio}</pre>", when=F["transcription_from_audio"]),
         Row(
             Back(Format("{back_btn}")),
-            Button(Const("⌯⌲ Отправить"), id="send_btn_id", on_click=handle_transcription, when=F["transcription_from_audio"]),
+            Button(
+                Const("⌯⌲ Отправить"), 
+                id="send_btn_id", 
+                on_click=handle_transcription, 
+                when=F["transcription_from_audio"]
+                ),
         ),
         TextInput(
             id="input_text_feedback",
@@ -227,11 +238,13 @@ dialog = Dialog(
             id="voice_feedback_id"
         ),
         getter=get_data_for_input,
+        parse_mode=ParseMode.HTML,
         state=Feedback.INPUT
     ),
 
     Window(
-        Format("{feedback_text}"),
+        Format("{output_header}"),
+        Format("<pre>{feedback_text}</pre>"),
         Row(
             Button(Const("👎"), id="dislike_id", on_click=handle_feedback),
             Button(Const("👍"), id="like_id", on_click=handle_feedback),

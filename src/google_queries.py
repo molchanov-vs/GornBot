@@ -1,4 +1,9 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from aiogram_dialog import DialogManager
+from aiogram import Bot
 
 from .utils.sheets_async import SheetsAsync
 
@@ -7,6 +12,8 @@ from .utils.utils import get_middleware_data
 from .custom_types import Teacher
 
 from .enums import DialogDataKeys
+
+from my_tools import get_datetime_now, DateTimeKeys
 
 
 # Multiple singletons for different spreadsheets
@@ -56,7 +63,7 @@ def get_prompts_sheets_instance(config: Config) -> SheetsAsync:
 
 
 # Teachers spreadsheet operations
-async def get_teachers(config: Config) -> list[Teacher]:
+async def get_teachers(config: Config, bot: Bot) -> list[Teacher]:
     """
     Get list of teachers from Google Sheets.
     """
@@ -64,21 +71,26 @@ async def get_teachers(config: Config) -> list[Teacher]:
 
     read_res = await sheet.read(f"{config.google.accesses_tab}!A1:C")
 
-    teachers: list[Teacher] = [
-        Teacher(id=row[1], name=row[0], disciplines=row[2].split(", ")) 
-        for row in read_res.get("values")[1:] if len(row) > 2]
+    teachers: list[Teacher] = []
+    for row in read_res.get("values")[1:]:
+        if len(row) > 2:
+            try:
+                teachers.append(Teacher(id=row[1], name=row[0], disciplines=row[2].split(", ")))
+            except Exception as e:
+                await bot.send_message(config.owner.id, f"❗Error parsing teacher:\n <code>{e}\n{row}</code>")
+                logger.error(f"Error parsing teacher: {e}")
 
     return teachers
 
 
-async def get_teachers_ids(config: Config) -> set[int]:
-    """
-    Get list of teachers from Google Sheets.
-    """
+# async def get_teachers_ids(config: Config) -> set[int]:
+#     """
+#     Get list of teachers from Google Sheets.
+#     """
 
-    teachers = await get_teachers(config)
+#     teachers = await get_teachers(config)
 
-    return set([teacher.id for teacher in teachers])
+#     return set([teacher.id for teacher in teachers])
 
 
 async def get_list_of_disciplines(
@@ -206,8 +218,8 @@ async def put_feedback(
         DialogDataKeys.FEEDBACK_TEXT, DialogDataKeys.UNKNOWN)
 
     await sheet.append(
-        f"{user_data.id}!A1:E",
+        f"{user_data.id}!A1:F",
         [
-            [discipline_name, task_name, text_from_teacher, feedback, int(like)]
+            [discipline_name, task_name, text_from_teacher, feedback, int(like), get_datetime_now(DateTimeKeys.DEFAULT)]
         ]
     )

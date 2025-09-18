@@ -9,6 +9,10 @@ pip install -r requirements.txt
 
 ## ToDo
 
-- [ ]
-
+- [ ] Roles: Admin, Teacher, Stranger, Friend
+- [x] Моноширный текст для транскрибации но без копировать
+- [x] Парсить ошибку нет препов
+- [ ] Демо для friends
+- [x] Дописать тэги
+- [ ] Замена/обновление промта
 

@@ -1,0 +1,50 @@
+services:
+  # Redis service for bot state management (DEV)
+  redis:
+    image: redis:8.2-alpine
+    container_name: gornbot-redis-prod
+    restart: no
+    ports:
+      - "6391:6379"  # Use different port to avoid conflict with prod
+    command: >
+      redis-server
+      --appendonly no
+      --dir /data
+      --dbfilename dump.rdb
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 30
+    networks:
+      - gornbot-network-prod
+
+  # Telegram bot application (DEV)
+  bot:
+    build: .
+    container_name: gornbot-app-prod
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: no
+    environment:
+      - ENVIRONMENT=prod
+    volumes:
+      - ./src:/app/src  # Mount source code for development
+      - ./scripts:/app/scripts
+      - ./bot.py:/app/bot.py:ro  # Mount main bot file
+      - ./dev_logs:/app/logs
+      - ./config.yaml:/app/config.yaml:ro
+      - ./forgebotmipt-b8cd0b55094b.json:/app/forgebotmipt-b8cd0b55094b.json:ro
+    networks:
+      - gornbot-network-prod
+    stdin_open: true
+    command: >
+      sh -c "echo 'Starting bot (PROD)...' && python bot.py"
+
+networks:
+  gornbot-network-prod:
+    name: gornbot-network-prod
+    driver: bridge

@@ -40,7 +40,7 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
 
     bot, config, user_data = get_middleware_data(dialog_manager)
 
-    teachers: list[Teacher] = await get_teachers(config)
+    teachers: list[Teacher] = await get_teachers(config, bot)
 
     teachers_ids: set[int] = set([teacher.id for teacher in teachers])
 

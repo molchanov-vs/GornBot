@@ -31,19 +31,17 @@ class Service:
 
 class Feedback:
     @staticmethod
-    def discipline(*, username: PossibleValue) -> Literal["""Привет, { $username }.
+    def discipline(*, name: PossibleValue) -> Literal["""Здравствуйте, { $name }.
 
-Выбери дисциплину:"""]: ...
+Выберите дисциплину:"""]: ...
     @staticmethod
     def task(*, discipline: PossibleValue) -> Literal["""Выбрана дисциплина &lt;b&gt;{ $discipline }&lt;/b&gt;.
 
-Выбери задачу:"""]: ...
+Выберите задачу:"""]: ...
     @staticmethod
-    def input(*, syllabus: PossibleValue, task_description: PossibleValue, task_name: PossibleValue) -> Literal["""Выбрано задание &lt;b&gt;{ $task_name }&lt;/b&gt;. 
-{ $task_description }
+    def input(*, task_name: PossibleValue) -> Literal["""Выбрано задание &lt;b&gt;{ $task_name }&lt;/b&gt;
 
-Силлабус: 
-{ $syllabus }"""]: ...
+Введите ваше сообщение или отправьте голосовую запись"""]: ...
     @staticmethod
     def audio() -> Literal["""Вот транскрибация:"""]: ...
     @staticmethod
