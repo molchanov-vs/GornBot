@@ -80,7 +80,7 @@ async def redo_feedback(
     dialog_manager: DialogManager):
 
     await put_feedback(dialog_manager, False)
-    await process_text(dialog_manager, default_config=False)
+    await process_text(dialog_manager, default_config=True) # don't change the config
 
 
 async def process_text(dialog_manager: DialogManager, default_config: bool = True):

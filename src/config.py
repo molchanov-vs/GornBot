@@ -68,6 +68,8 @@ class LLM(BaseModel):
     provider: str
     embedding_model: str
 
+class Telegraph(BaseModel):
+    access_token: str
 
 class Config(BaseModel):
 
@@ -82,7 +84,7 @@ class Config(BaseModel):
     google: Google
     openai: LLM
     gemini: LLM
-
+    telegraph: Telegraph
 
 # Load the YAML configuration file
 def load_config() -> Config:

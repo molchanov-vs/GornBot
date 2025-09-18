@@ -10,6 +10,7 @@ google-auth==2.40.3
 google-auth-oauthlib==1.2.2
 google-auth-httplib2==0.2.0
 httpx==0.28.1
+telegraph==2.2.0
 git+https://github.com/molchanov-vs/my_tools.git@bb255b7
 
 # pip install --upgrade google-api-python-client google-auth google-auth-oauthlib google-auth-httplib2

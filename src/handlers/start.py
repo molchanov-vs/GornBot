@@ -57,7 +57,6 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
         
     except Exception as e:
         logging.error(f"Error getting data for dialog for {user_data.id} ({user_data.full_name}): {e}")
-        # await bot.send_message(user_data.id, f"❌ Ошибка при получении данных для диалога: {e}")
 
         connect_btn = InlineKeyboardButton(
                 text=f"💬 {config.owner.name}",
@@ -72,8 +71,7 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
     finally:
         typing_task.cancel()
     
-
-
+    
 @router.errors(ExceptionTypeFilter(UnknownIntent))
 async def on_unknown_intent(event: ErrorEvent, dialog_manager: DialogManager):
     """Handle UnknownIntent Error and start a new dialog."""
