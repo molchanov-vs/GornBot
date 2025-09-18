@@ -15,4 +15,6 @@ pip install -r requirements.txt
 - [ ] Демо для friends
 - [x] Дописать тэги
 - [ ] Замена/обновление промта
+- [ ] Telegraph
+- [ ] Перегенирировать
 

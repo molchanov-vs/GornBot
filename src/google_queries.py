@@ -96,20 +96,26 @@ async def get_teachers(config: Config, bot: Bot) -> list[Teacher]:
 async def get_list_of_disciplines(
         config: Config, 
         teachers: list[Teacher],
-        teacher_id: int) -> list[tuple[str, str]]:
+        user_id: int) -> list[tuple[str, str]]:
     """
     Get list of disciplines for a current teacher.
     """
 
-    sheet: SheetsAsync = get_teachers_sheets_instance(config)
+    teachers_ids: set[int] = set([teacher.id for teacher in teachers])
+    if user_id in teachers_ids:
 
-    read_discs = await sheet.read(f"{config.google.accesses_tab}!E1:F")
+        sheet: SheetsAsync = get_teachers_sheets_instance(config)
 
-    discs = dict([(el[0], el[1]) for el in read_discs.get("values")[1:]])
+        read_discs = await sheet.read(f"{config.google.accesses_tab}!E1:F")
 
-    teacher = next((t for t in teachers if t.id == teacher_id), None)
+        discs = dict([(el[0], el[1]) for el in read_discs.get("values")[1:]])
 
-    return [(d, discs.get(d)) for d in teacher.disciplines] # [("Матметоды", "mathmethods"), ...]
+        teacher = next((t for t in teachers if t.id == user_id), None)
+
+        return [(d, discs.get(d)) for d in teacher.disciplines] # [("Матметоды", "mathmethods"), ...]
+
+    else:
+        return [("Демо: Финмоделирование", "demo")]
 
 
 async def get_list_of_tasks(

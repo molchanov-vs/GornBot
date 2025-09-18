@@ -23,7 +23,7 @@ from fluentogram import TranslatorHub
 
 router: Router = Router()
 
-MESSAGE_NOT_TEACHER = "Похоже, что вы не являетесь преподавателем либо у вас нет активных дисциплин. Пожалуйста, обратитесь к администратору."
+EMERGENCY_MESSAGE = "Что-то пошло не так. Пожалуйста, обратитесь к администратору."
 
 def get_current_state(
         dialog_manager: DialogManager, 
@@ -40,13 +40,24 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
 
     bot, config, user_data = get_middleware_data(dialog_manager)
 
-    teachers: list[Teacher] = await get_teachers(config, bot)
+    log_message = f"Bot is starting for {user_data.id} ({user_data.full_name})"
+    logging.warning(log_message)
 
-    teachers_ids: set[int] = set([teacher.id for teacher in teachers])
+    teachers: list[Teacher] = await get_teachers(config, bot)
 
     await add_action(dialog_manager, Action.START)
 
-    if user_data.id not in teachers_ids:
+    current_state = get_current_state(dialog_manager, config, user_data.id)
+
+    typing_task = asyncio.create_task(send_typing_action(user_data.id, bot))
+
+    try:
+        start_data: dict = await get_data_for_dialog(config, teachers, user_data.id)
+        await start_dialog(dialog_manager, current_state, start_data)
+        
+    except Exception as e:
+        logging.error(f"Error getting data for dialog for {user_data.id} ({user_data.full_name}): {e}")
+        # await bot.send_message(user_data.id, f"❌ Ошибка при получении данных для диалога: {e}")
 
         connect_btn = InlineKeyboardButton(
                 text=f"💬 {config.owner.name}",
@@ -54,32 +65,13 @@ async def process_start(message: Message, dialog_manager: DialogManager) -> None
             )
 
         await message.answer(
-            text=MESSAGE_NOT_TEACHER,
+            text=EMERGENCY_MESSAGE,
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[[connect_btn]])
         )
-        suffix = "NOT a teacher"
+
+    finally:
+        typing_task.cancel()
     
-    else:
-        suffix = "a teacher"
-
-        current_state = get_current_state(dialog_manager, config, user_data.id)
-
-        typing_task = asyncio.create_task(send_typing_action(user_data.id, bot))
-
-        try:
-            start_data: dict = await get_data_for_dialog(config, teachers, user_data.id)
-            
-        except Exception as e:
-            logging.error(f"Error getting data for dialog for {user_data.id} ({user_data.full_name}): {e}")
-            # await bot.send_message(user_data.id, f"❌ Ошибка при получении данных для диалога: {e}")
-        finally:
-            typing_task.cancel()
-        
-        await start_dialog(dialog_manager, current_state, start_data)
-        
-
-    log_message = f"Bot is starting for {suffix} {user_data.id} ({user_data.full_name})"
-    logging.warning(log_message)
 
 
 @router.errors(ExceptionTypeFilter(UnknownIntent))
